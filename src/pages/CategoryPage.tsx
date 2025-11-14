@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import { SlidersHorizontal, X } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { SlidersHorizontal, X, Search } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -13,15 +14,60 @@ import { products } from '../data/products';
 
 export default function CategoryPage() {
   const { categoryName } = useParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [sortBy, setSortBy] = useState('newest');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<string[]>([]);
   const [minRating, setMinRating] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [localSearchInput, setLocalSearchInput] = useState('');
+
+  // Get search query from URL parameters
+  useEffect(() => {
+    const search = searchParams.get('search');
+    if (search) {
+      setSearchQuery(search);
+      setLocalSearchInput(search);
+    } else {
+      setSearchQuery('');
+      setLocalSearchInput('');
+    }
+  }, [searchParams]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (localSearchInput.trim()) {
+      const newSearchParams = new URLSearchParams();
+      newSearchParams.set('search', localSearchInput.trim());
+      navigate(`/category/${categoryName || 'all'}?${newSearchParams.toString()}`);
+    } else {
+      navigate(`/category/${categoryName || 'all'}`);
+    }
+  };
+
+  const clearSearch = () => {
+    setLocalSearchInput('');
+    setSearchQuery('');
+    navigate(`/category/${categoryName || 'all'}`);
+  };
 
   const categories = Array.from(new Set(products.map((p) => p.category)));
 
   const filteredProducts = useMemo(() => {
     let filtered = products;
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((p) => 
+        p.name.toLowerCase().includes(query) ||
+        p.shortDesc.toLowerCase().includes(query) ||
+        p.description.toLowerCase().includes(query) ||
+        p.category.toLowerCase().includes(query) ||
+        (p.tags && Array.isArray(p.tags) && p.tags.some(tag => tag.toLowerCase().includes(query)))
+      );
+    }
 
     // Filter by category
     if (categoryName && categoryName !== 'all') {
@@ -63,7 +109,7 @@ export default function CategoryPage() {
     }
 
     return filtered;
-  }, [categoryName, selectedCategories, priceRange, minRating, sortBy]);
+  }, [categoryName, selectedCategories, priceRange, minRating, sortBy, searchQuery]);
 
   const toggleCategory = (category: string) => {
     setSelectedCategories((prev) =>
@@ -167,9 +213,57 @@ export default function CategoryPage() {
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="mb-2">
-              {categoryName && categoryName !== 'all' ? categoryName : 'All Products'}
+              {searchQuery ? `Search Results for "${searchQuery}"` : 
+               (categoryName && categoryName !== 'all' ? categoryName : 'All Products')}
             </h1>
-            <p className="text-white/60">{filteredProducts.length} products found</p>
+            <p className="text-white/60">
+              {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+              {searchQuery && categoryName && categoryName !== 'all' && ` in ${categoryName}`}
+            </p>
+          </div>
+
+          {/* Search Bar */}
+          <div className="mb-8">
+            <form onSubmit={handleSearch} className="relative max-w-md">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                <Input
+                  type="text"
+                  placeholder={`Search ${categoryName && categoryName !== 'all' ? `in ${categoryName}` : 'all products'}...`}
+                  value={localSearchInput}
+                  onChange={(e) => setLocalSearchInput(e.target.value)}
+                  className="border-white/20 bg-[#121212] pl-10 pr-10 focus:border-[#5B46F7] focus:ring-[#5B46F7]/20"
+                />
+                {localSearchInput && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <Button type="submit" className="sr-only">
+                Search
+              </Button>
+            </form>
+            
+            {/* Active Search Tag */}
+            {searchQuery && (
+              <div className="mt-3 flex items-center gap-2">
+                <div className="inline-flex items-center rounded-full bg-[#5B46F7]/10 border border-[#5B46F7]/20 px-3 py-1 text-sm">
+                  <Search className="mr-1 h-3 w-3" />
+                  {searchQuery}
+                  <button
+                    onClick={clearSearch}
+                    className="ml-2 hover:text-red-400 transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-8 lg:grid-cols-[280px_1fr]">

@@ -1,11 +1,24 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingCart, Menu, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Menu, X, Search } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { Input } from './ui/input';
+import { Button } from './ui/button';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const { cart } = useCart();
+  const navigate = useNavigate();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/category/all?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+      setMobileMenuOpen(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0D0D0D]/95 backdrop-blur-sm">
@@ -29,6 +42,20 @@ export default function Header() {
               Support
             </Link>
           </nav>
+
+          {/* Desktop Search Bar */}
+          <div className="hidden md:block flex-1 max-w-md mx-8">
+            <form onSubmit={handleSearch} className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+              <Input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full border-white/20 bg-white/5 pl-10 pr-4 text-white placeholder:text-white/40 focus:border-[#5B46F7] focus:ring-[#5B46F7]/20"
+              />
+            </form>
+          </div>
 
           {/* Desktop Actions */}
           <div className="hidden items-center gap-4 md:flex">
@@ -54,6 +81,20 @@ export default function Header() {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="border-t border-white/10 py-4 md:hidden">
+            {/* Mobile Search */}
+            <div className="mb-4">
+              <form onSubmit={handleSearch} className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                <Input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full border-white/20 bg-white/5 pl-10 pr-4 text-white placeholder:text-white/40 focus:border-[#5B46F7] focus:ring-[#5B46F7]/20"
+                />
+              </form>
+            </div>
+            
             <nav className="flex flex-col gap-4">
               <Link
                 to="/"

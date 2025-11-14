@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Download, Shield, RefreshCw, MessageCircle, Layout, Brain, Code, Puzzle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Download, Shield, RefreshCw, MessageCircle, Layout, Brain, Code, Puzzle, Search } from 'lucide-react';
 import { motion } from 'motion/react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -8,18 +8,28 @@ import ProductCard from '../components/ProductCard';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { products } from '../data/products';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { formatCurrencySimple } from '../utils/currency';
 
 export default function HomePage() {
   const [email, setEmail] = useState('');
+  const [heroSearchQuery, setHeroSearchQuery] = useState('');
+  const navigate = useNavigate();
   const featuredProducts = products.filter((p) => p.isFeatured);
 
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     toast.success('Thanks for subscribing! Check your email for a free tool.');
     setEmail('');
+  };
+
+  const handleHeroSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (heroSearchQuery.trim()) {
+      navigate(`/category/all?search=${encodeURIComponent(heroSearchQuery.trim())}`);
+      setHeroSearchQuery('');
+    }
   };
 
   return (
@@ -41,6 +51,21 @@ export default function HomePage() {
                 <p className="mb-8 text-xl text-white/70">
                   Premium templates, AI tools, scripts, and plugins built by indie makers, for indie makers.
                 </p>
+                
+                {/* Hero Search Bar */}
+                <div className="mb-8">
+                  <form onSubmit={handleHeroSearch} className="relative max-w-md">
+                    <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" />
+                    <Input
+                      type="text"
+                      placeholder="Search templates, tools, scripts..."
+                      value={heroSearchQuery}
+                      onChange={(e) => setHeroSearchQuery(e.target.value)}
+                      className="h-12 w-full border-white/20 bg-white/5 pl-12 pr-4 text-white placeholder:text-white/40 focus:border-[#5B46F7] focus:ring-[#5B46F7]/20"
+                    />
+                  </form>
+                </div>
+                
                 <div className="flex flex-wrap gap-4">
                   <Button
                     asChild

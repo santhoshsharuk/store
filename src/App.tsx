@@ -8,6 +8,7 @@ import SupportPage from './pages/SupportPage';
 import AdminPage from './pages/AdminPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import ProductEditorPage from './pages/ProductEditorPage';
+import NotFoundPage from './pages/NotFoundPage';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import { CartProvider } from './context/CartContext';
 import { AdminAuthProvider } from './context/AdminAuthContext';
@@ -41,7 +42,7 @@ export default function App() {
                   </AdminProtectedRoute>
                 } />
                 
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <Toaster position="top-right" />
           </div>
