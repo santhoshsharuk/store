@@ -16,7 +16,7 @@ export default function App() {
   return (
     <CartProvider>
       <AdminAuthProvider>
-        <Router>
+        <Router basename="/store">
           <div className="min-h-screen bg-[#0D0D0D] text-white">
             <Routes>
                 <Route path="/" element={<HomePage />} />

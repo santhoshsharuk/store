@@ -5,7 +5,7 @@
 
   export default defineConfig({
     plugins: [react()],
-    base: './', // Use relative paths for GitHub Pages
+    base: '/store/', // GitHub Pages repository path
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
