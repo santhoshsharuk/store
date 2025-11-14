@@ -1,0 +1,248 @@
+export interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  description: string;
+  shortDesc: string;
+  thumbnail: string;
+  screenshots: string[];
+  features: string[];
+  rating: number;
+  reviews: number;
+  tags: string[];
+  changelog: { version: string; date: string; changes: string[] }[];
+  license: { personal: number; commercial: number; extended: number };
+  sellerPhone: string;
+  isFeatured: boolean;
+  isBestseller: boolean;
+}
+
+// Seller WhatsApp number (include country code without +)
+export const SELLER_WHATSAPP = '919812345678'; // Replace with your actual number
+
+export const products: Product[] = [
+  {
+    id: '1',
+    name: 'React Dashboard Pro',
+    category: 'Templates',
+    price: 3999,
+    sellerPhone: SELLER_WHATSAPP,
+    description: 'Production-ready React dashboard with dark mode, responsive design, and 50+ components.',
+    shortDesc: 'Complete admin dashboard template',
+    thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
+    screenshots: [
+      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800',
+      'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800',
+    ],
+    features: [
+      'Modern React 18 + TypeScript',
+      'Tailwind CSS styling',
+      '50+ pre-built components',
+      'Dark/Light mode toggle',
+      'Responsive design',
+      'Chart integrations',
+      'Authentication flows',
+      'Lifetime updates',
+    ],
+    rating: 4.8,
+    reviews: 124,
+    tags: ['react', 'dashboard', 'admin', 'typescript'],
+    changelog: [
+      {
+        version: '2.1.0',
+        date: '2025-11-01',
+        changes: ['Added new chart components', 'Improved mobile responsiveness', 'Bug fixes'],
+      },
+      {
+        version: '2.0.0',
+        date: '2025-10-15',
+        changes: ['Major redesign', 'Added dark mode', 'Performance improvements'],
+      },
+    ],
+    license: { personal: 3999, commercial: 7999, extended: 15999 },
+    isFeatured: true,
+    isBestseller: true,
+  },
+  {
+    id: '2',
+    name: 'AI Content Generator API',
+    category: 'AI Tools',
+    price: 6499,
+    sellerPhone: SELLER_WHATSAPP,
+    description: 'REST API wrapper for multiple AI models. Generate text, images, and code with a simple interface.',
+    shortDesc: 'Multi-model AI API wrapper',
+    thumbnail: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800',
+    screenshots: [
+      'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800',
+      'https://images.unsplash.com/photo-1655720828018-edd2daec9349?w=800',
+    ],
+    features: [
+      'OpenAI GPT-4 integration',
+      'Image generation support',
+      'Code completion API',
+      'Rate limiting & caching',
+      'Usage analytics',
+      'Node.js & Python SDKs',
+    ],
+    rating: 4.9,
+    reviews: 89,
+    tags: ['ai', 'api', 'gpt', 'automation'],
+    changelog: [
+      {
+        version: '1.5.0',
+        date: '2025-11-10',
+        changes: ['Added GPT-4 Turbo support', 'New image models', 'Improved error handling'],
+      },
+    ],
+    license: { personal: 6499, commercial: 11999, extended: 24999 },
+    isFeatured: true,
+    isBestseller: false,
+  },
+  {
+    id: '3',
+    name: 'Stripe Payment Scripts',
+    category: 'Scripts',
+    price: 2499,
+    sellerPhone: SELLER_WHATSAPP,
+    description: 'Ready-to-use Stripe integration scripts for common payment scenarios.',
+    shortDesc: 'Plug-and-play Stripe payment code',
+    thumbnail: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800',
+    screenshots: [
+      'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800',
+      'https://images.unsplash.com/photo-1556742111-a301076d9d18?w=800',
+    ],
+    features: [
+      'One-time payments',
+      'Subscription handling',
+      'Webhook listeners',
+      'Invoice generation',
+      'Refund automation',
+      'Full TypeScript support',
+    ],
+    rating: 4.7,
+    reviews: 203,
+    tags: ['stripe', 'payment', 'ecommerce', 'javascript'],
+    changelog: [
+      {
+        version: '1.2.0',
+        date: '2025-10-20',
+        changes: ['Added subscription features', 'Updated to latest Stripe API'],
+      },
+    ],
+    license: { personal: 2499, commercial: 4999, extended: 9999 },
+    isFeatured: false,
+    isBestseller: true,
+  },
+  {
+    id: '4',
+    name: 'WordPress SEO Plugin',
+    category: 'Plugins',
+    price: 3299,
+    sellerPhone: SELLER_WHATSAPP,
+    description: 'Lightweight SEO plugin with schema markup, meta tags, and sitemap generation.',
+    shortDesc: 'Essential WordPress SEO toolkit',
+    thumbnail: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800',
+    screenshots: [
+      'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800',
+      'https://images.unsplash.com/photo-1432888622747-4eb9a8f2c293?w=800',
+    ],
+    features: [
+      'Schema.org markup',
+      'XML sitemap generation',
+      'Meta tag optimization',
+      'Open Graph support',
+      'Breadcrumb integration',
+      'Analytics tracking',
+    ],
+    rating: 4.6,
+    reviews: 156,
+    tags: ['wordpress', 'seo', 'plugin', 'optimization'],
+    changelog: [
+      {
+        version: '3.0.0',
+        date: '2025-11-05',
+        changes: ['WordPress 6.4 compatibility', 'New schema types', 'Performance boost'],
+      },
+    ],
+    license: { personal: 3299, commercial: 6499, extended: 12999 },
+    isFeatured: false,
+    isBestseller: false,
+  },
+  {
+    id: '5',
+    name: 'Email Template Builder',
+    category: 'Templates',
+    price: 2999,
+    sellerPhone: SELLER_WHATSAPP,
+    description: 'Responsive HTML email templates with inline CSS. Works with all major email clients.',
+    shortDesc: '20+ responsive email templates',
+    thumbnail: 'https://images.unsplash.com/photo-1557200134-90327ee9fafa?w=800',
+    screenshots: [
+      'https://images.unsplash.com/photo-1557200134-90327ee9fafa?w=800',
+    ],
+    features: [
+      '20 email templates',
+      'Mobile responsive',
+      'Inline CSS',
+      'Gmail/Outlook tested',
+      'Easy customization',
+      'MJML source included',
+    ],
+    rating: 4.5,
+    reviews: 78,
+    tags: ['email', 'template', 'html', 'responsive'],
+    changelog: [
+      {
+        version: '1.1.0',
+        date: '2025-09-12',
+        changes: ['Added 5 new templates', 'Improved Outlook compatibility'],
+      },
+    ],
+    license: { personal: 2999, commercial: 5699, extended: 11499 },
+    isFeatured: true,
+    isBestseller: false,
+  },
+  {
+    id: '6',
+    name: 'Analytics Dashboard Script',
+    category: 'Scripts',
+    price: 3699,
+    sellerPhone: SELLER_WHATSAPP,
+    description: 'Beautiful analytics dashboard that works with Google Analytics, Plausible, or custom data sources.',
+    shortDesc: 'Customizable analytics dashboard',
+    thumbnail: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
+    screenshots: [
+      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800',
+    ],
+    features: [
+      'Multiple data sources',
+      'Real-time updates',
+      'Custom metrics',
+      'Export reports',
+      'Dark/Light themes',
+      'Embeddable widgets',
+    ],
+    rating: 4.8,
+    reviews: 91,
+    tags: ['analytics', 'dashboard', 'javascript', 'visualization'],
+    changelog: [
+      {
+        version: '2.0.0',
+        date: '2025-10-30',
+        changes: ['Added real-time support', 'New chart types', 'Performance optimization'],
+      },
+    ],
+    license: { personal: 3699, commercial: 7299, extended: 14799 },
+    isFeatured: false,
+    isBestseller: true,
+  },
+];
+
+export const categories = [
+  { name: 'Templates', icon: 'Layout', count: 2 },
+  { name: 'AI Tools', icon: 'Brain', count: 1 },
+  { name: 'Scripts', icon: 'Code', count: 2 },
+  { name: 'Plugins', icon: 'Puzzle', count: 1 },
+];
