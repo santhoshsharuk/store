@@ -6,8 +6,6 @@ import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '../components/ui/radio-group';
-import { Label } from '../components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { useCart } from '../context/CartContext';
 import { products, SELLER_WHATSAPP } from '../data/products';
@@ -18,7 +16,6 @@ import { formatCurrencySimple } from '../utils/currency';
 export default function ProductDetailPage() {
   const { productId } = useParams();
   const product = products.find((p) => p.id === productId);
-  const [selectedLicense, setSelectedLicense] = useState<'personal' | 'commercial' | 'extended'>('personal');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
   const { addToCart } = useCart();
@@ -48,15 +45,15 @@ export default function ProductDetailPage() {
     addToCart({
       productId: product.id,
       name: product.name,
-      price: product.license[selectedLicense],
-      license: selectedLicense,
+      price: product.price,
+      license: 'full',
       thumbnail: product.thumbnail,
     });
     toast.success('Added to cart!');
   };
 
   const handleWhatsAppOrder = () => {
-    const message = `Hi! I'm interested in purchasing "${product.name}" with the ${selectedLicense} license (${formatCurrencySimple(product.license[selectedLicense])}). Can you help me with the order?`;
+    const message = `Hi! I'm interested in purchasing "${product.name}" (${formatCurrencySimple(product.price)}). Can you help me with the order?`;
     const whatsappUrl = `https://wa.me/${SELLER_WHATSAPP}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
     setWhatsappModalOpen(false);
@@ -72,19 +69,50 @@ export default function ProductDetailPage() {
             {/* Left: Images */}
             <div>
               <div className="mb-4 overflow-hidden rounded-2xl border border-white/10">
-                <ImageWithFallback
-                  src={product.screenshots[currentImageIndex]}
-                  alt={product.name}
-                  className="aspect-video w-full object-cover"
-                />
+                {currentImageIndex === 0 && product.demoVideo ? (
+                  <iframe
+                    width="100%"
+                    height="400"
+                    src={product.demoVideo.replace('watch?v=', 'embed/')}
+                    title="Product Demo Video"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="aspect-video w-full"
+                  />
+                ) : (
+                  <ImageWithFallback
+                    src={product.screenshots[product.demoVideo ? currentImageIndex - 1 : currentImageIndex]}
+                    alt={product.name}
+                    className="aspect-video w-full object-cover"
+                  />
+                )}
               </div>
               <div className="grid grid-cols-4 gap-4">
+                {product.demoVideo && (
+                  <button
+                    onClick={() => setCurrentImageIndex(0)}
+                    className={`overflow-hidden rounded-lg border-2 transition-all flex items-center justify-center bg-black/50 ${
+                      currentImageIndex === 0
+                        ? 'border-[#5B46F7]'
+                        : 'border-white/10 hover:border-white/30'
+                    }`}
+                  >
+                    <svg
+                      className="h-8 w-8 text-white"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </button>
+                )}
                 {product.screenshots.map((screenshot, index) => (
                   <button
                     key={index}
-                    onClick={() => setCurrentImageIndex(index)}
+                    onClick={() => setCurrentImageIndex(product.demoVideo ? index + 1 : index)}
                     className={`overflow-hidden rounded-lg border-2 transition-all ${
-                      currentImageIndex === index
+                      currentImageIndex === (product.demoVideo ? index + 1 : index)
                         ? 'border-[#5B46F7]'
                         : 'border-white/10 hover:border-white/30'
                     }`}
@@ -135,51 +163,15 @@ export default function ProductDetailPage() {
 
               <p className="mb-8 text-lg text-white/80">{product.description}</p>
 
-              {/* License Selection */}
+              {/* Price */}
               <div className="mb-6 rounded-2xl border border-white/10 bg-[#121212] p-6">
-                <h3 className="mb-4">Select License</h3>
-                <RadioGroup value={selectedLicense} onValueChange={(value: any) => setSelectedLicense(value)}>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between rounded-lg border border-white/10 p-4">
-                      <div className="flex items-center gap-3">
-                        <RadioGroupItem value="personal" id="personal" />
-                        <Label htmlFor="personal" className="cursor-pointer">
-                          <div>
-                            <p>Personal License</p>
-                            <p className="text-sm text-white/60">For personal projects</p>
-                          </div>
-                        </Label>
-                      </div>
-                      <span className="text-xl">{formatCurrencySimple(product.license.personal)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between rounded-lg border border-white/10 p-4">
-                      <div className="flex items-center gap-3">
-                        <RadioGroupItem value="commercial" id="commercial" />
-                        <Label htmlFor="commercial" className="cursor-pointer">
-                          <div>
-                            <p>Commercial License</p>
-                            <p className="text-sm text-white/60">For client projects</p>
-                          </div>
-                        </Label>
-                      </div>
-                      <span className="text-xl">{formatCurrencySimple(product.license.commercial)}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between rounded-lg border border-white/10 p-4">
-                      <div className="flex items-center gap-3">
-                        <RadioGroupItem value="extended" id="extended" />
-                        <Label htmlFor="extended" className="cursor-pointer">
-                          <div>
-                            <p>Extended License</p>
-                            <p className="text-sm text-white/60">Unlimited projects</p>
-                          </div>
-                        </Label>
-                      </div>
-                      <span className="text-xl">{formatCurrencySimple(product.license.extended)}</span>
-                    </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="mb-1">Full Source Code</h3>
+                    <p className="text-sm text-white/60">Complete software with all files</p>
                   </div>
-                </RadioGroup>
+                  <span className="text-3xl font-bold">{formatCurrencySimple(product.price)}</span>
+                </div>
               </div>
 
               {/* CTA Buttons */}
@@ -344,8 +336,8 @@ export default function ProductDetailPage() {
           </DialogHeader>
           <div className="rounded-lg border border-white/10 bg-[#0D0D0D] p-4">
             <p className="text-sm text-white/80">
-              Hi! I'm interested in purchasing "{product.name}" with the {selectedLicense} license (
-              {formatCurrencySimple(product.license[selectedLicense])}). Can you help me with the order?
+              Hi! I'm interested in purchasing "{product.name}" (
+              {formatCurrencySimple(product.price)}). Can you help me with the order?
             </p>
           </div>
           <div className="flex gap-4">

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Star, ShoppingCart } from 'lucide-react';
+import { Star, ShoppingCart, Sparkles, TrendingUp } from 'lucide-react';
 import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 import { useCart } from '../context/CartContext';
 import { toast } from 'sonner@2.0.3';
 import { Product } from '../data/products';
@@ -19,8 +20,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     addToCart({
       productId: product.id,
       name: product.name,
-      price: product.license.personal,
-      license: 'personal',
+      price: product.price,
+      license: 'full',
       thumbnail: product.thumbnail,
     });
     toast.success('Added to cart!');
@@ -29,46 +30,92 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
       to={`/product/${product.id}`}
-      className="group block overflow-hidden rounded-2xl border border-white/10 bg-[#121212] transition-all hover:-translate-y-2 hover:shadow-xl hover:shadow-[#5B46F7]/20"
+      className="group relative block overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#121212] to-[#0D0D0D] transition-all hover:-translate-y-2 hover:border-[#5B46F7]/40 hover:shadow-2xl hover:shadow-[#5B46F7]/20"
     >
-      <div className="aspect-video overflow-hidden">
+      {/* Featured Badge */}
+      {product.isFeatured && (
+        <div className="absolute left-3 top-3 z-10 flex items-center gap-1 rounded-full bg-gradient-to-r from-[#5B46F7] to-[#00C2FF] px-3 py-1.5 text-xs font-semibold shadow-lg">
+          <Sparkles className="h-3 w-3" />
+          Featured
+        </div>
+      )}
+
+      {/* Thumbnail with Overlay Gradient */}
+      <div className="relative aspect-video overflow-hidden">
         <ImageWithFallback
           src={product.thumbnail}
           alt={product.name}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0D] via-transparent to-transparent opacity-60" />
+        
+        {/* Rating Badge - Top Right */}
+        <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 backdrop-blur-sm">
+          <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+          <span className="text-xs font-semibold">{product.rating}</span>
+        </div>
       </div>
-      <div className="p-6">
-        <div className="mb-2 flex items-center gap-2">
-          <span className="rounded-full bg-[#5B46F7]/10 px-3 py-1 text-xs text-[#5B46F7]">
+
+      {/* Content Section */}
+      <div className="p-4 sm:p-6">
+        {/* Category & Bestseller Tags */}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <Badge variant="secondary" className="rounded-full border-0 bg-[#5B46F7]/15 px-2.5 py-0.5 text-xs font-medium text-[#5B46F7] hover:bg-[#5B46F7]/20">
             {product.category}
-          </span>
+          </Badge>
           {product.isBestseller && (
-            <span className="rounded-full bg-[#00C2FF]/10 px-3 py-1 text-xs text-[#00C2FF]">
+            <Badge variant="secondary" className="rounded-full border-0 bg-emerald-500/15 px-2.5 py-0.5 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20">
+              <TrendingUp className="mr-1 h-3 w-3" />
               Bestseller
-            </span>
+            </Badge>
           )}
         </div>
-        <h3 className="mb-2 line-clamp-1">{product.name}</h3>
-        <p className="mb-4 line-clamp-2 text-sm text-white/60">{product.shortDesc}</p>
 
-        <div className="mb-4 flex items-center gap-2">
+        {/* Product Name */}
+        <h3 className="mb-2 line-clamp-1 text-base font-semibold transition-colors group-hover:text-[#5B46F7] sm:text-lg">
+          {product.name}
+        </h3>
+
+        {/* Short Description */}
+        <p className="mb-4 line-clamp-2 text-xs text-white/60 sm:text-sm">
+          {product.shortDesc}
+        </p>
+
+        {/* Reviews Count */}
+        <div className="mb-4 flex items-center gap-2 text-xs text-white/50">
           <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm">{product.rating}</span>
+            <div className="flex">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-3 w-3 ${
+                    i < Math.floor(product.rating)
+                      ? 'fill-yellow-400 text-yellow-400'
+                      : 'fill-white/10 text-white/10'
+                  }`}
+                />
+              ))}
+            </div>
           </div>
-          <span className="text-sm text-white/40">({product.reviews} reviews)</span>
+          <span className="font-medium">({product.reviews.toLocaleString()} reviews)</span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-2xl">{formatCurrencySimple(product.license.personal)}</span>
+        {/* Price & CTA Section */}
+        <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-4">
+          <div className="flex flex-col">
+            <span className="text-xs text-white/40">Price</span>
+            <span className="bg-gradient-to-r from-[#5B46F7] to-[#00C2FF] bg-clip-text text-xl font-bold text-transparent sm:text-2xl">
+              {formatCurrencySimple(product.price)}
+            </span>
+          </div>
           <Button
             onClick={handleAddToCart}
             size="sm"
-            className="bg-[#5B46F7] hover:bg-[#5B46F7]/90"
+            className="group/btn relative overflow-hidden bg-gradient-to-r from-[#5B46F7] to-[#4a38d9] px-3 py-2 text-xs font-semibold transition-all hover:scale-105 hover:shadow-lg hover:shadow-[#5B46F7]/50 sm:px-4 sm:text-sm"
           >
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Add to Cart
+            <ShoppingCart className="mr-1.5 h-3.5 w-3.5 transition-transform group-hover/btn:scale-110 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Add to Cart</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>

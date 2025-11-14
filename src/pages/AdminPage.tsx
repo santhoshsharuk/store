@@ -1,498 +1,478 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Package,
-  ShoppingBag,
-  Users,
-  DollarSign,
-  TrendingUp,
+  Layers,
+  Tag,
   Plus,
   Edit,
   Trash2,
+  Download,
+  Copy,
+  Sparkles,
+  Search,
+  Filter,
   Eye,
-  EyeOff,
+  Calendar,
+  TrendingUp,
+  LogOut,
+  Shield,
 } from 'lucide-react';
+import { useAdminAuth } from '../context/AdminAuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { useAuth } from '../context/AuthContext';
-import { products, SELLER_WHATSAPP } from '../data/products';
 import { toast } from 'sonner@2.0.3';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { formatCurrencySimple } from '../utils/currency';
+import { products as initialProducts, categories as initialCategories } from '../data/products';
 
-// Admin credentials (in production, use environment variables or backend auth)
-const ADMIN_USERNAME = 'admin';
-const ADMIN_PASSWORD = 'admin123';
+interface ProductFormState {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  sellerPhone: string;
+  description: string;
+  shortDesc: string;
+  thumbnail: string;
+  demoVideo: string;
+  screenshots: string;
+  features: string;
+  tags: string;
+  rating: number;
+  reviews: number;
+  isFeatured: boolean;
+  isBestseller: boolean;
+}
+
+const defaultProductForm = (category: string): ProductFormState => ({
+  id: '',
+  name: '',
+  category,
+  price: 0,
+  sellerPhone: '919812345678',
+  description: '',
+  shortDesc: '',
+  thumbnail: '',
+  demoVideo: '',
+  screenshots: '',
+  features: '',
+  tags: '',
+  rating: 4.8,
+  reviews: 0,
+  isFeatured: false,
+  isBestseller: false,
+});
 
 export default function AdminPage() {
-  const { user, isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
-  const [addProductOpen, setAddProductOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  
-  // Login state
-  const [loginUsername, setLoginUsername] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const { logout } = useAdminAuth();
+  const [products, setProducts] = useState(initialProducts);
+  const [categories, setCategories] = useState(initialCategories);
+  const [categoryForm, setCategoryForm] = useState({ name: '', icon: '', count: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // New product form state
-  const [newProduct, setNewProduct] = useState({
-    name: '',
-    category: 'Templates',
-    description: '',
-    shortDesc: '',
-    pricePersonal: '',
-    priceCommercial: '',
-    priceExtended: '',
-    tags: '',
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
+    navigate('/');
+  };
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.shortDesc.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchTerm, selectedCategory]);
+
+  const stats = useMemo(() => {
+    const totalValue = products.reduce((sum, product) => sum + product.price, 0);
+    const featured = products.filter((p) => p.isFeatured).length;
+    const bestsellers = products.filter((p) => p.isBestseller).length;
+    return [
+      { label: 'Total Products', value: products.length, icon: Package, color: 'from-blue-500 to-blue-600' },
+      { label: 'Categories', value: categories.length, icon: Layers, color: 'from-purple-500 to-purple-600' },
+      { label: 'Featured Items', value: featured, icon: Sparkles, color: 'from-yellow-500 to-yellow-600' },
+      { label: 'Bestsellers', value: bestsellers, icon: TrendingUp, color: 'from-green-500 to-green-600' },
+    ];
+  }, [products, categories.length]);
+
+  const handleProductChange = (field: keyof ProductFormState, value: string | number | boolean) => {
+    // This function is no longer needed as we navigate to editor page
+  };
+
+  const resetProductForm = () => {
+    // This function is no longer needed as we navigate to editor page
+  };
+
+  const productToFormState = (product: (typeof products)[number]): ProductFormState => ({
+    // This function is no longer needed as we navigate to editor page
+    ...product,
+    screenshots: product.screenshots.join(', '),
+    features: product.features.join('\n'),
+    tags: product.tags.join(', '),
   });
 
-  // Mock stats
-  const stats = [
-    { label: 'Total Revenue', value: '₹1,24,500', icon: DollarSign, change: '+12.5%' },
-    { label: 'Total Orders', value: '248', icon: ShoppingBag, change: '+8.2%' },
-    { label: 'Products', value: products.length.toString(), icon: Package, change: '+2' },
-    { label: 'Customers', value: '1,284', icon: Users, change: '+18.3%' },
-  ];
+  const parseList = (value: string, delimiter: RegExp | string) =>
+    value
+      .split(delimiter)
+      .map((item) => item.trim())
+      .filter(Boolean);
 
-  // Mock orders
-  const recentOrders = [
-    { id: '1001', customer: 'Rahul Sharma', product: products[0].name, amount: 3999, status: 'completed', date: '2025-11-14' },
-    { id: '1002', customer: 'Priya Patel', product: products[1].name, amount: 6499, status: 'completed', date: '2025-11-13' },
-    { id: '1003', customer: 'Amit Kumar', product: products[2].name, amount: 2499, status: 'pending', date: '2025-11-14' },
-  ];
+  const handleProductSubmit = (event: React.FormEvent) => {
+    // This function is no longer needed as we navigate to editor page
+    event.preventDefault();
+  };
 
-  const handleAdminLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loginUsername === ADMIN_USERNAME && loginPassword === ADMIN_PASSWORD) {
-      setIsAdminLoggedIn(true);
-      login('admin@devstore.com', loginPassword);
-      toast.success('Welcome to Admin Panel!');
-    } else {
-      toast.error('Invalid credentials!');
+  const handleProductEdit = (productId: string) => {
+    navigate(`/admin/editor?id=${productId}`);
+  };
+
+  const handleProductDelete = (productId: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+    setProducts((prev) => prev.filter((product) => product.id !== productId));
+    toast.success('Product deleted successfully!');
+  };
+
+  const handleCategorySubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!categoryForm.name || !categoryForm.icon) {
+      toast.error('Category name and icon are required');
+      return;
+    }
+
+    setCategories((prev) => {
+      const exists = prev.some((category) => category.name.toLowerCase() === categoryForm.name.toLowerCase());
+      if (exists) {
+        toast.error('Category already exists');
+        return prev;
+      }
+      return [
+        ...prev,
+        {
+          name: categoryForm.name,
+          icon: categoryForm.icon,
+          count: Number(categoryForm.count) || 0,
+        },
+      ];
+    });
+
+    toast.success('Category added successfully!');
+    setCategoryForm({ name: '', icon: '', count: '' });
+  };
+
+  const jsonString = JSON.stringify({ products, categories }, null, 2);
+
+  const handleDownloadJson = () => {
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'products.updated.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCopyJson = async () => {
+    try {
+      await navigator.clipboard.writeText(jsonString);
+      toast.success('JSON copied to clipboard');
+    } catch (error) {
+      toast.error('Clipboard copy failed');
     }
   };
-
-  const handleAddProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // In a real app, this would make an API call
-    const productData = {
-      ...newProduct,
-      pricePersonal: parseInt(newProduct.pricePersonal),
-      priceCommercial: parseInt(newProduct.priceCommercial),
-      priceExtended: parseInt(newProduct.priceExtended),
-      tags: newProduct.tags.split(',').map(tag => tag.trim()),
-    };
-    
-    console.log('New Product:', productData);
-    toast.success('Product added successfully!');
-    setAddProductOpen(false);
-    
-    // Reset form
-    setNewProduct({
-      name: '',
-      category: 'Templates',
-      description: '',
-      shortDesc: '',
-      pricePersonal: '',
-      priceCommercial: '',
-      priceExtended: '',
-      tags: '',
-    });
-  };
-
-  // Show login screen if not authenticated as admin
-  if (!isAdminLoggedIn) {
-    return (
-      <>
-        <Header />
-        <main className="flex min-h-screen items-center justify-center px-4 py-16">
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121212] p-8">
-            <div className="mb-8 text-center">
-              <div className="mb-4 inline-flex rounded-xl bg-[#5B46F7]/20 p-4">
-                <Package className="h-8 w-8 text-[#5B46F7]" />
-              </div>
-              <h1 className="mb-2">Admin Login</h1>
-              <p className="text-sm text-white/60">Enter your credentials to access the admin panel</p>
-            </div>
-            
-            <form onSubmit={handleAdminLogin} className="space-y-4">
-              <div>
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="admin"
-                  value={loginUsername}
-                  onChange={(e) => setLoginUsername(e.target.value)}
-                  required
-                  className="border-white/20 bg-[#0D0D0D]"
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                    className="border-white/20 bg-[#0D0D0D] pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-              <Button type="submit" className="w-full bg-[#5B46F7] hover:bg-[#5B46F7]/90">
-                Sign In
-              </Button>
-            </form>
-            
-            <div className="mt-6 rounded-lg border border-white/10 bg-[#0D0D0D] p-4">
-              <p className="mb-2 text-sm">Demo Credentials:</p>
-              <p className="text-xs text-white/60">Username: <code className="text-[#5B46F7]">admin</code></p>
-              <p className="text-xs text-white/60">Password: <code className="text-[#5B46F7]">admin123</code></p>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </>
-    );
-  }
 
   return (
     <>
       <Header />
       <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="mb-2">Admin Dashboard</h1>
-              <p className="text-white/60">Manage your digital store</p>
+        <div className="mx-auto max-w-7xl space-y-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="rounded-lg bg-gradient-to-r from-[#5B46F7] to-[#4a38d9] p-2">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="mb-1 text-2xl font-bold text-white">Admin Dashboard</h1>
+                <p className="text-white/60">Manage products, categories, and export updated JSON.</p>
+              </div>
             </div>
-            <div className="text-sm text-white/60">
-              WhatsApp: <span className="text-[#25D366]">+{SELLER_WHATSAPP}</span>
+            <div className="flex flex-wrap gap-3">
+              <Button 
+                variant="outline" 
+                className="border-white/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/50" 
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" /> 
+                Logout
+              </Button>
+              <Button variant="outline" className="border-white/20" onClick={handleCopyJson}>
+                <Copy className="mr-2 h-4 w-4" /> Copy JSON
+              </Button>
+              <Button className="bg-[#5B46F7] hover:bg-[#5B46F7]/90" onClick={handleDownloadJson}>
+                <Download className="mr-2 h-4 w-4" /> Download JSON
+              </Button>
             </div>
           </div>
 
-          {/* Stats Grid */}
-          <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={stat.label}
-                  className="rounded-2xl border border-white/10 bg-[#121212] p-6"
-                >
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="rounded-lg bg-[#5B46F7]/20 p-2">
-                      <Icon className="h-5 w-5 text-[#5B46F7]" />
-                    </div>
-                    <div className="flex items-center gap-1 text-sm text-green-400">
-                      <TrendingUp className="h-4 w-4" />
-                      {stat.change}
-                    </div>
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {stats.map((stat) => (
+              <div key={stat.label} className="group relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#121212] to-[#0D0D0D] p-6 transition-all hover:border-white/20">
+                <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 transition-opacity group-hover:opacity-10`} />
+                <div className="relative">
+                  <div className={`mb-4 inline-flex rounded-xl bg-gradient-to-r ${stat.color} p-3 shadow-lg`}>
+                    <stat.icon className="h-6 w-6 text-white" />
                   </div>
-                  <p className="mb-1 text-sm text-white/60">{stat.label}</p>
-                  <p className="text-2xl">{stat.value}</p>
+                  <p className="text-sm font-medium text-white/60">{stat.label}</p>
+                  <p className="text-3xl font-bold text-white">
+                    {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
+                  </p>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
 
-          {/* Tabs */}
           <Tabs defaultValue="products" className="w-full">
             <TabsList className="mb-8 border-b border-white/10 bg-transparent">
               <TabsTrigger value="products">Products</TabsTrigger>
-              <TabsTrigger value="orders">Orders</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="categories">Categories</TabsTrigger>
+              <TabsTrigger value="json">JSON Preview</TabsTrigger>
             </TabsList>
 
-            {/* Products Tab */}
             <TabsContent value="products" className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2>Manage Products</h2>
-                <Dialog open={addProductOpen} onOpenChange={setAddProductOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="bg-[#5B46F7] hover:bg-[#5B46F7]/90">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Product
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl border-white/10 bg-[#121212]">
-                    <DialogHeader>
-                      <DialogTitle>Add New Product</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleAddProduct} className="space-y-4">
-                      <div>
-                        <Label htmlFor="product-name">Product Name *</Label>
-                        <Input
-                          id="product-name"
-                          placeholder="React Dashboard Pro"
-                          value={newProduct.name}
-                          onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                          className="border-white/20 bg-[#0D0D0D]"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="product-category">Category *</Label>
-                        <Select
-                          value={newProduct.category}
-                          onValueChange={(value) => setNewProduct({...newProduct, category: value})}
-                        >
-                          <SelectTrigger className="border-white/20 bg-[#0D0D0D]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="border-white/10 bg-[#121212]">
-                            <SelectItem value="Templates">Templates</SelectItem>
-                            <SelectItem value="AI Tools">AI Tools</SelectItem>
-                            <SelectItem value="Scripts">Scripts</SelectItem>
-                            <SelectItem value="Plugins">Plugins</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="product-short-desc">Short Description *</Label>
-                        <Input
-                          id="product-short-desc"
-                          placeholder="Brief product description..."
-                          value={newProduct.shortDesc}
-                          onChange={(e) => setNewProduct({...newProduct, shortDesc: e.target.value})}
-                          className="border-white/20 bg-[#0D0D0D]"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="product-desc">Full Description *</Label>
-                        <Textarea
-                          id="product-desc"
-                          placeholder="Detailed product description..."
-                          value={newProduct.description}
-                          onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                          className="border-white/20 bg-[#0D0D0D]"
-                          rows={4}
-                          required
-                        />
-                      </div>
-                      <div className="grid gap-4 sm:grid-cols-3">
-                        <div>
-                          <Label htmlFor="price-personal">Personal (₹) *</Label>
-                          <Input
-                            id="price-personal"
-                            type="number"
-                            placeholder="3999"
-                            value={newProduct.pricePersonal}
-                            onChange={(e) => setNewProduct({...newProduct, pricePersonal: e.target.value})}
-                            className="border-white/20 bg-[#0D0D0D]"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="price-commercial">Commercial (₹) *</Label>
-                          <Input
-                            id="price-commercial"
-                            type="number"
-                            placeholder="7999"
-                            value={newProduct.priceCommercial}
-                            onChange={(e) => setNewProduct({...newProduct, priceCommercial: e.target.value})}
-                            className="border-white/20 bg-[#0D0D0D]"
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="price-extended">Extended (₹) *</Label>
-                          <Input
-                            id="price-extended"
-                            type="number"
-                            placeholder="15999"
-                            value={newProduct.priceExtended}
-                            onChange={(e) => setNewProduct({...newProduct, priceExtended: e.target.value})}
-                            className="border-white/20 bg-[#0D0D0D]"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="product-tags">Tags (comma-separated)</Label>
-                        <Input
-                          id="product-tags"
-                          placeholder="react, dashboard, admin, typescript"
-                          value={newProduct.tags}
-                          onChange={(e) => setNewProduct({...newProduct, tags: e.target.value})}
-                          className="border-white/20 bg-[#0D0D0D]"
-                        />
-                      </div>
-                      <div className="flex gap-3 pt-4">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setAddProductOpen(false)}
-                          className="flex-1 border-white/20"
-                        >
-                          Cancel
-                        </Button>
-                        <Button type="submit" className="flex-1 bg-[#5B46F7] hover:bg-[#5B46F7]/90">
-                          Add Product
-                        </Button>
-                      </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <div className="space-y-4">
-                {products.map((product) => (
-                  <div
-                    key={product.id}
-                    className="rounded-2xl border border-white/10 bg-[#121212] p-6"
-                  >
-                    <div className="flex flex-col gap-6 md:flex-row">
-                      <ImageWithFallback
-                        src={product.thumbnail}
-                        alt={product.name}
-                        className="h-24 w-32 rounded-lg object-cover"
-                      />
-                      <div className="flex-1">
-                        <div className="mb-2 flex items-start justify-between">
-                          <div>
-                            <h3 className="mb-1">{product.name}</h3>
-                            <p className="text-sm text-white/60">{product.category}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="ghost" onClick={() => toast.info('Edit feature coming soon')}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="text-red-400 hover:text-red-300"
-                              onClick={() => toast.info('Delete feature coming soon')}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <p className="mb-3 text-sm text-white/70">{product.shortDesc}</p>
-                        <div className="flex flex-wrap gap-4 text-sm">
-                          <span className="text-white/60">
-                            Sales: <span className="text-white">{product.reviews}</span>
-                          </span>
-                          <span className="text-white/60">
-                            Price: <span className="text-white">{formatCurrencySimple(product.license.personal)}</span>
-                          </span>
-                          <span className="text-white/60">
-                            Rating: <span className="text-white">{product.rating}⭐</span>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+              {/* Search and Filter Controls */}
+              <div className="flex flex-col gap-4 rounded-xl border border-white/10 bg-[#121212] p-6 md:flex-row md:items-center md:justify-between">
+                <div className="flex flex-1 items-center gap-4">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+                    <Input
+                      placeholder="Search products..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="border-white/20 bg-[#0D0D0D] pl-10"
+                    />
                   </div>
-                ))}
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-48 border-white/20 bg-[#0D0D0D]">
+                      <Filter className="mr-2 h-4 w-4" />
+                      <SelectValue placeholder="Filter by category" />
+                    </SelectTrigger>
+                    <SelectContent className="border-white/10 bg-[#121212]">
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category.name} value={category.name}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={() => navigate('/admin/editor')}
+                  className="bg-gradient-to-r from-[#5B46F7] to-[#4a38d9] hover:from-[#5B46F7]/90 hover:to-[#4a38d9]/90"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Product
+                </Button>
               </div>
-            </TabsContent>
 
-            {/* Orders Tab */}
-            <TabsContent value="orders" className="space-y-6">
-              <div className="rounded-2xl border border-white/10 bg-[#121212]">
+              {/* Products Table */}
+              <div className="rounded-xl border border-white/10 bg-[#121212] overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="border-b border-white/10">
+                    <thead className="border-b border-white/10 bg-[#0D0D0D]">
                       <tr>
-                        <th className="p-4 text-left text-sm">Order ID</th>
-                        <th className="p-4 text-left text-sm">Date</th>
-                        <th className="p-4 text-left text-sm">Customer</th>
-                        <th className="p-4 text-left text-sm">Product</th>
-                        <th className="p-4 text-left text-sm">Amount</th>
-                        <th className="p-4 text-left text-sm">Status</th>
-                        <th className="p-4 text-left text-sm">Actions</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">Product</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">Category</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">Price</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">Status</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">Rating</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-white/80">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {recentOrders.map((order) => (
-                        <tr key={order.id} className="border-b border-white/10 last:border-0">
-                          <td className="p-4 text-sm">#{order.id}</td>
-                          <td className="p-4 text-sm text-white/70">{order.date}</td>
-                          <td className="p-4 text-sm text-white/70">{order.customer}</td>
-                          <td className="p-4 text-sm">{order.product}</td>
-                          <td className="p-4 text-sm">{formatCurrencySimple(order.amount)}</td>
-                          <td className="p-4">
-                            <Badge
-                              className={
-                                order.status === 'completed' ? 'bg-green-500' : 'bg-yellow-500'
-                              }
-                            >
-                              {order.status}
-                            </Badge>
-                          </td>
-                          <td className="p-4">
-                            <Button size="sm" variant="ghost" onClick={() => toast.info('View order details')}>
-                              View
-                            </Button>
+                      {filteredProducts.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-12 text-center text-white/40">
+                            {searchTerm || selectedCategory !== 'all' ? 'No products match your search criteria' : 'No products found'}
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        filteredProducts.map((product, index) => (
+                          <tr 
+                            key={product.id} 
+                            className={`border-b border-white/5 transition-all hover:bg-white/5 ${
+                              index % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.02]'
+                            }`}
+                          >
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-4">
+                                <ImageWithFallback
+                                  src={product.thumbnail}
+                                  alt={product.name}
+                                  className="h-12 w-12 rounded-lg object-cover"
+                                />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-white truncate">{product.name}</p>
+                                  <p className="text-xs text-white/50 truncate">{product.shortDesc}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <Badge variant="secondary" className="bg-[#5B46F7]/10 text-[#5B46F7] hover:bg-[#5B46F7]/20">
+                                {product.category}
+                              </Badge>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-sm font-semibold text-white">{formatCurrencySimple(product.price)}</span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex gap-1">
+                                {product.isFeatured && (
+                                  <Badge className="bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20">
+                                    <Sparkles className="mr-1 h-3 w-3" />
+                                    Featured
+                                  </Badge>
+                                )}
+                                {product.isBestseller && (
+                                  <Badge className="bg-green-500/10 text-green-400 hover:bg-green-500/20">
+                                    <TrendingUp className="mr-1 h-3 w-3" />
+                                    Bestseller
+                                  </Badge>
+                                )}
+                                {!product.isFeatured && !product.isBestseller && (
+                                  <Badge variant="outline" className="border-white/20 text-white/60">
+                                    Regular
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-white">{product.rating}</span>
+                                <div className="text-yellow-400">⭐</div>
+                                <span className="text-xs text-white/40">({product.reviews})</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleProductEdit(product.id)}
+                                  className="h-8 w-8 p-0 hover:bg-blue-500/10 hover:text-blue-400"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleProductDelete(product.id)}
+                                  className="h-8 w-8 p-0 hover:bg-red-500/10 hover:text-red-400"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
+                </div>
+                
+                {/* Table Footer */}
+                <div className="border-t border-white/10 bg-[#0D0D0D] px-6 py-3">
+                  <p className="text-sm text-white/60">
+                    Showing {filteredProducts.length} of {products.length} products
+                    {searchTerm && ` • Filtered by "${searchTerm}"`}
+                    {selectedCategory !== 'all' && ` • Category: ${selectedCategory}`}
+                  </p>
                 </div>
               </div>
             </TabsContent>
 
-            {/* Settings Tab */}
-            <TabsContent value="settings" className="space-y-6">
-              <div className="rounded-2xl border border-white/10 bg-[#121212] p-8">
-                <h2 className="mb-6">Store Settings</h2>
-                <div className="space-y-6">
-                  <div>
-                    <Label htmlFor="whatsapp-number">WhatsApp Number</Label>
-                    <Input
-                      id="whatsapp-number"
-                      type="text"
-                      value={`+${SELLER_WHATSAPP}`}
-                      readOnly
-                      className="border-white/20 bg-[#0D0D0D]"
-                    />
-                    <p className="mt-2 text-xs text-white/60">
-                      Update this in /data/products.ts - SELLER_WHATSAPP constant
-                    </p>
+            <TabsContent value="categories" className="space-y-6">
+              <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+                <div className="space-y-4">
+                  {categories.map((category) => (
+                    <div key={category.name} className="rounded-2xl border border-white/10 bg-[#121212] p-6">
+                      <p className="text-xs text-white/40">Icon: {category.icon}</p>
+                      <h3 className="text-xl font-semibold">{category.name}</h3>
+                      <p className="text-sm text-white/60">{category.count} products linked</p>
+                    </div>
+                  ))}
+                </div>
+                <form className="rounded-2xl border border-white/10 bg-[#121212] p-6" onSubmit={handleCategorySubmit}>
+                  <h2 className="mb-4 text-lg">Add Category</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="category-name">Name *</Label>
+                      <Input
+                        id="category-name"
+                        value={categoryForm.name}
+                        onChange={(event) => setCategoryForm((prev) => ({ ...prev, name: event.target.value }))}
+                        className="border-white/20 bg-[#0D0D0D]"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="category-icon">Icon label *</Label>
+                      <Input
+                        id="category-icon"
+                        value={categoryForm.icon}
+                        onChange={(event) => setCategoryForm((prev) => ({ ...prev, icon: event.target.value }))}
+                        className="border-white/20 bg-[#0D0D0D]"
+                        placeholder="e.g. Layout"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="category-count">Display count</Label>
+                      <Input
+                        id="category-count"
+                        type="number"
+                        min={0}
+                        value={categoryForm.count}
+                        onChange={(event) => setCategoryForm((prev) => ({ ...prev, count: event.target.value }))}
+                        className="border-white/20 bg-[#0D0D0D]"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full bg-[#5B46F7] hover:bg-[#5B46F7]/90">
+                      Add Category
+                    </Button>
                   </div>
-                  <div>
-                    <Label htmlFor="store-name">Store Name</Label>
-                    <Input
-                      id="store-name"
-                      type="text"
-                      defaultValue="DevStore"
-                      className="border-white/20 bg-[#0D0D0D]"
-                    />
+                </form>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="json">
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-white/10 bg-[#121212] p-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-lg">products.json preview</h2>
+                    <div className="flex gap-3">
+                      <Button variant="outline" className="border-white/20" onClick={handleCopyJson}>
+                        <Copy className="mr-2 h-4 w-4" /> Copy
+                      </Button>
+                      <Button className="bg-[#5B46F7] hover:bg-[#5B46F7]/90" onClick={handleDownloadJson}>
+                        <Download className="mr-2 h-4 w-4" /> Download
+                      </Button>
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="store-email">Support Email</Label>
-                    <Input
-                      id="store-email"
-                      type="email"
-                      defaultValue="support@devstore.com"
-                      className="border-white/20 bg-[#0D0D0D]"
-                    />
-                  </div>
-                  <Button className="bg-[#5B46F7] hover:bg-[#5B46F7]/90" onClick={() => toast.success('Settings saved!')}>
-                    Save Settings
-                  </Button>
+                  <Textarea value={jsonString} readOnly rows={20} className="border-white/10 bg-[#0D0D0D] font-mono text-xs" />
                 </div>
               </div>
             </TabsContent>

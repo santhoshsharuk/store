@@ -35,12 +35,12 @@ export default function CategoryPage() {
     // Filter by price range
     if (priceRange.length > 0) {
       filtered = filtered.filter((p) => {
-        const price = p.license.personal;
+        const price = p.price;
         return priceRange.some((range) => {
-          if (range === 'under30') return price < 30;
-          if (range === '30-50') return price >= 30 && price <= 50;
-          if (range === '50-100') return price > 50 && price <= 100;
-          if (range === 'over100') return price > 100;
+          if (range === 'under2000') return price < 2000;
+          if (range === '2000-4000') return price >= 2000 && price <= 4000;
+          if (range === '4000-6000') return price > 4000 && price <= 6000;
+          if (range === 'over6000') return price > 6000;
           return false;
         });
       });
@@ -57,9 +57,9 @@ export default function CategoryPage() {
     } else if (sortBy === 'popular') {
       filtered = [...filtered].sort((a, b) => b.reviews - a.reviews);
     } else if (sortBy === 'price-low') {
-      filtered = [...filtered].sort((a, b) => a.license.personal - b.license.personal);
+      filtered = [...filtered].sort((a, b) => a.price - b.price);
     } else if (sortBy === 'price-high') {
-      filtered = [...filtered].sort((a, b) => b.license.personal - a.license.personal);
+      filtered = [...filtered].sort((a, b) => b.price - a.price);
     }
 
     return filtered;
@@ -111,10 +111,10 @@ export default function CategoryPage() {
         <h3 className="mb-4">Price</h3>
         <div className="space-y-3">
           {[
-            { label: 'Under $30', value: 'under30' },
-            { label: '$30 - $50', value: '30-50' },
-            { label: '$50 - $100', value: '50-100' },
-            { label: 'Over $100', value: 'over100' },
+            { label: 'Under ₹2,000', value: 'under2000' },
+            { label: '₹2,000 - ₹4,000', value: '2000-4000' },
+            { label: '₹4,000 - ₹6,000', value: '4000-6000' },
+            { label: 'Over ₹6,000', value: 'over6000' },
           ].map((range) => (
             <div key={range.value} className="flex items-center space-x-2">
               <Checkbox
